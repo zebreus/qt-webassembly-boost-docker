@@ -12,10 +12,10 @@ RUN mkdir -p /tmp/boost ;\
 	cd /tmp/boost/boost*/ ;\
 	./bootstrap.sh ;\
 	./b2 toolset=emscripten cxxflags=-std=c++17 system ;\
-	mv /tmp/boost/boost_*/boost /emsdk_portable/sdk/system/include/ ;\
+	mv /tmp/boost/boost_*/boost /boost/ ;\
 	rm -rf /tmp/boost
 
 #Copy files to new stage
 FROM $QT_WASM_BASE
 MAINTAINER Lennart E.
-COPY --from=boost-stage /emsdk_portable/sdk/system/include/boost /emsdk_portable/sdk/system/include/
+COPY --from=boost-stage /boost/ /emsdk_portable/sdk/system/include/boost/
