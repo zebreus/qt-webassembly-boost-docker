@@ -1,0 +1,60 @@
+---
+resources:
+  - name: qt-webassembly-boost-docker
+    type: git
+    source:
+      uri: https://github.com/Zebreus/qt-webassembly-boost-docker.git
+      branch: master
+  - name: qt-webassembly-boost-latest
+    type: registry-image
+    source:
+      repository: ((registry_username))/qt-webassembly-boost
+      username: ((registry_username))
+      password: ((registry_password))
+      tag: latest
+  - name: qt-webassembly-latest
+    type: registry-image
+    source:
+      repository: madmanfred/qt-webassembly
+      tag: latest
+  - name: oci-build-task
+    type: registry-image
+    source:
+      repository: vito/oci-build-task
+
+jobs:
+  - name: build-latest
+    public: true
+    plan:
+      - get: qt-webassembly-boost-docker
+#        trigger: true
+      - get: qt-webassembly-latest
+        params:
+          format: oci
+        trigger: true
+      - get: oci-build-task
+      - task: build-qt-webassembly-boost
+        privileged: true
+        image: oci-build-task
+        config:
+          platform: linux
+          params:
+            DOCKERFILE: ./qt-webassembly-boost-docker/Dockerfile
+          inputs:
+          - name: qt-webassembly-boost-docker
+          - name: qt-webassembly-latest
+            path: qt-webassembly/
+          outputs:
+          - name: image
+          caches:
+          - path: cache
+          run:
+            path: sh
+            args:
+             - -ceux
+             - |
+               export BUILD_ARG_QT_WASM_BASE="madmanfred/qt-webassembly@$(cat qt-webassembly/digest)"
+               build
+      - put: qt-webassembly-boost-latest
+        params:
+          image: image/image.tar
